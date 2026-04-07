@@ -1,14 +1,38 @@
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ACTIVITIES } from './data';
+import api from './api';
 import { useAuth } from './AuthContext';
 import toast from 'react-hot-toast';
 import { MapPin, Clock, Calendar, Users, ArrowLeft, Tag, UserCheck, Star, Share2 } from 'lucide-react';
+import Spinner from './Spinner';
 
 export default function ActivityDetails() {
     const { id } = useParams();
     const navigate = useNavigate();
     const { user, isRegistered, registerForActivity } = useAuth();
-    const a = ACTIVITIES.find(x => x.id === id);
+    const [a, setActivity] = useState(null);
+    const [related, setRelated] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const res = await api.get(`/activities/${id}`);
+                setActivity(res.data);
+                
+                // Fetch related (for now we filter after fetching all, or we could have a related API)
+                const allRes = await api.get('/activities');
+                setRelated(allRes.data.filter(x => x.id !== parseInt(id) && x.category === res.data.category).slice(0, 3));
+            } catch (err) {
+                console.error('Failed to fetch activity', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
+    }, [id]);
+
+    if (loading) return <div style={{ display: 'grid', placeItems: 'center', height: '60vh' }}><Spinner /></div>;
 
     if (!a) return (
         <div className="page-in" style={{ textAlign: 'center', padding: '80px 20px' }}>
@@ -21,14 +45,20 @@ export default function ActivityDetails() {
     const registered = isRegistered(id);
     const fillPct = Math.min(100, Math.round((a.currentParticipants / a.maxParticipants) * 100));
     const catEmoji = a.category === 'Club' ? '🎭' : a.category === 'Sport' ? '🏆' : '⚡';
-    const related = ACTIVITIES.filter(x => x.id !== id && x.category === a.category).slice(0, 3);
 
-    const handleRegister = () => {
+    const handleRegister = async () => {
         if (!user) { navigate('/login'); return; }
         if (user.role === 'admin') { toast.error('Admins cannot register for activities'); return; }
         if (registered) { toast('Already registered!', { icon: '✅' }); return; }
-        registerForActivity(id);
-        toast.success(`Registered for "${a.title}"!`);
+        const success = await registerForActivity(id);
+        if (success) {
+            toast.success(`Registered for "${a.title}"!`);
+            // Refresh activity data to show updated participant count
+            const res = await api.get(`/activities/${id}`);
+            setActivity(res.data);
+        } else {
+            toast.error('Registration failed. Please try again.');
+        }
     };
 
     return (
@@ -51,7 +81,7 @@ export default function ActivityDetails() {
                 </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: 20, alignItems: 'start' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 280px', gap: 20, alignItems: 'start' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                     {/* About */}
                     <div className="card-static" style={{ padding: 24 }}>

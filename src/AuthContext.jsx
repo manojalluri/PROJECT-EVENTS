@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { USERS, NOTIFICATIONS, REGISTRATIONS } from './data';
+import api from './api';
 
 const AuthContext = createContext(null);
 
@@ -7,70 +7,99 @@ export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [notifications, setNotifications] = useState([]);
-    const [registrations, setRegistrations] = useState([...REGISTRATIONS]);
+    const [registrations, setRegistrations] = useState([]);
 
     useEffect(() => {
         const stored = localStorage.getItem('cc_user');
         if (stored) {
             const parsed = JSON.parse(stored);
-            setUser(parsed);
-            setNotifications(NOTIFICATIONS.filter(n => n.userId === parsed.id));
+            if (parsed.user && parsed.user.role) parsed.user.role = parsed.user.role.toLowerCase();
+            setUser(parsed.user); // Store only user info
+            fetchNotifications(parsed.user.id);
+            fetchRegistrations(parsed.user.id);
         }
         setLoading(false);
     }, []);
 
-    const login = (email, password) => {
-        const found = USERS.find(u => u.email === email && u.password === password);
-        if (!found) throw new Error('Invalid email or password');
-        const { password: _, ...safeUser } = found;
-        setUser(safeUser);
-        setNotifications(NOTIFICATIONS.filter(n => n.userId === safeUser.id));
-        localStorage.setItem('cc_user', JSON.stringify(safeUser));
-        return safeUser;
+    const fetchNotifications = async (userId) => {
+        try {
+            const res = await api.get(`/notifications/${userId}`);
+            setNotifications(res.data);
+        } catch (err) {
+            console.error('Failed to fetch notifications', err);
+        }
     };
 
-    const register = (name, email, password, department, year) => {
-        if (USERS.find(u => u.email === email)) throw new Error('Email already registered');
-        const newUser = {
-            id: String(Date.now()), name, email, role: 'student',
-            department, year: year || '1st Year',
-            avatar: name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2),
-            joinedAt: new Date().toISOString().split('T')[0],
-            registeredActivities: [],
-        };
-        USERS.push({ ...newUser, password });
-        setUser(newUser);
+    const fetchRegistrations = async (userId) => {
+        try {
+            const res = await api.get(`/participation/user/${userId}`);
+            setRegistrations(res.data);
+        } catch (err) {
+            console.error('Failed to fetch registrations', err);
+        }
+    };
+
+    const login = async (email, password) => {
+        const res = await api.post('/auth/login', { email, password });
+        const data = res.data; // { token, user }
+        if (data.user && data.user.role) data.user.role = data.user.role.toLowerCase();
+        setUser(data.user);
+        localStorage.setItem('cc_user', JSON.stringify(data));
+        fetchNotifications(data.user.id);
+        fetchRegistrations(data.user.id);
+        return data.user;
+    };
+
+    const register = async (name, email, password, department, year) => {
+        const res = await api.post('/auth/register', { name, email, password, department, year });
+        const data = res.data;
+        if (data.user && data.user.role) data.user.role = data.user.role.toLowerCase();
+        setUser(data.user);
+        localStorage.setItem('cc_user', JSON.stringify(data));
         setNotifications([]);
-        localStorage.setItem('cc_user', JSON.stringify(newUser));
-        return newUser;
+        setRegistrations([]);
+        return data.user;
     };
 
     const logout = () => {
-        setUser(null); setNotifications([]);
+        setUser(null); 
+        setNotifications([]);
+        setRegistrations([]);
         localStorage.removeItem('cc_user');
     };
 
-    const markRead = (id) => setNotifications(p => p.map(n => n.id === id ? { ...n, isRead: true } : n));
-    const markAllRead = () => setNotifications(p => p.map(n => ({ ...n, isRead: true })));
-
-    const registerForActivity = (activityId) => {
-        if (!user || registrations.find(r => r.studentId === user.id && r.activityId === activityId)) return false;
-        setRegistrations(p => [...p, {
-            id: 'r' + Date.now(), studentId: user.id, activityId,
-            status: 'Registered', registeredAt: new Date().toISOString().split('T')[0],
-        }]);
-        return true;
+    const markRead = async (id) => {
+        await api.put(`/notifications/${id}/read`);
+        setNotifications(p => p.map(n => n.id === id ? { ...n, isRead: true } : n));
     };
 
-    const getMyRegistrations = () => registrations.filter(r => r.studentId === user?.id);
-    const isRegistered = (aId) => registrations.some(r => r.studentId === user?.id && r.activityId === aId);
+    const markAllRead = async () => {
+        if (!user) return;
+        await api.put(`/notifications/all/read/${user.id}`);
+        setNotifications(p => p.map(n => ({ ...n, isRead: true })));
+    };
+
+    const registerForActivity = async (activityId) => {
+        if (!user) return false;
+        try {
+            const res = await api.post(`/participation/${user.id}/${activityId}`);
+            setRegistrations(p => [...p, res.data]);
+            fetchNotifications(user.id); // Get the confirmation notice
+            return true;
+        } catch (err) {
+            console.error('Registration failed', err);
+            return false;
+        }
+    };
+
+    const isRegistered = (aId) => registrations.some(r => r.activity?.id === aId || r.activityId === aId);
     const unreadCount = notifications.filter(n => !n.isRead).length;
 
     return (
         <AuthContext.Provider value={{
             user, loading, notifications, registrations, unreadCount,
             login, register, logout, markRead, markAllRead,
-            registerForActivity, getMyRegistrations, isRegistered,
+            registerForActivity, isRegistered,
         }}>
             {children}
         </AuthContext.Provider>

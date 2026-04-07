@@ -1,15 +1,39 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
-import { ACTIVITIES } from './data';
+import api from './api';
 import toast from 'react-hot-toast';
+import Spinner from './Spinner';
 import { User, Mail, BookOpen, Calendar, Award, Edit2, Save, GraduationCap, Settings, X } from 'lucide-react';
 
 export default function Profile() {
     const { user } = useAuth();
     const [editing, setEditing] = useState(false);
     const [name, setName] = useState(user?.name || '');
+    const { registrations } = useAuth();
+    const [activities, setActivities] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    const isAdmin = user?.role === 'admin';
+    const isAdmin = user?.role === 'ADMIN' || user?.role === 'admin';
+
+    useEffect(() => {
+        const fetchActivities = async () => {
+            try {
+                const res = await api.get('/activities');
+                setActivities(res.data);
+            } catch (err) {
+                console.error(err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        if (user) {
+            fetchActivities();
+        } else {
+            setLoading(false);
+        }
+    }, [user]);
+
+    if (loading) return <div style={{ display: 'grid', placeItems: 'center', height: '60vh' }}><Spinner /></div>;
 
     const details = [
         { icon: <User size={14} />, label: 'Full Name', val: user?.name },
@@ -20,15 +44,15 @@ export default function Profile() {
     ];
 
     const stats = isAdmin ? [
-        { emoji: '📋', label: 'Activities', val: ACTIVITIES.length },
-        { emoji: '🎭', label: 'Clubs', val: ACTIVITIES.filter(a => a.category === 'Club').length },
-        { emoji: '🏆', label: 'Sports', val: ACTIVITIES.filter(a => a.category === 'Sport').length },
-        { emoji: '⚡', label: 'Events', val: ACTIVITIES.filter(a => a.category === 'Event').length },
+        { emoji: '📋', label: 'Activities', val: activities.length },
+        { emoji: '🎭', label: 'Clubs', val: activities.filter(a => a.category === 'Club').length },
+        { emoji: '🏆', label: 'Sports', val: activities.filter(a => a.category === 'Sport').length },
+        { emoji: '⚡', label: 'Events', val: activities.filter(a => a.category === 'Event').length },
     ] : [
         { emoji: '📚', label: 'Department', val: user?.department?.split(' ')[0] || 'N/A' },
         { emoji: '📅', label: 'Year', val: user?.year || 'N/A' },
-        { emoji: '🏅', label: 'Clubs Joined', val: user?.registeredActivities?.filter(id => ACTIVITIES.find(a => a.id === id && a.category === 'Club')).length || 0 },
-        { emoji: '🔥', label: 'Total Joined', val: user?.registeredActivities?.length || 0 },
+        { emoji: '🏅', label: 'Clubs Joined', val: registrations?.filter(r => r.activity?.category === 'Club').length || 0 },
+        { emoji: '🔥', label: 'Total Joined', val: registrations?.length || 0 },
     ];
 
     const badges = [

@@ -23,10 +23,10 @@ export default function Register() {
         setLoading(true);
         try {
             await new Promise(r => setTimeout(r, 600));
-            const u = register(f.name, f.email, f.password, f.department, f.year);
+            const u = await register(f.name, f.email, f.password, f.department, f.year);
             toast.success(`Welcome, ${u.name.split(' ')[0]}!`);
             navigate('/dashboard');
-        } catch (err) { toast.error(err.message); }
+        } catch (err) { toast.error(err.response?.data?.message || err.message); }
         finally { setLoading(false); }
     };
 

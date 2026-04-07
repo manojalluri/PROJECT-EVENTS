@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { GraduationCap, ArrowRight, Users, CalendarDays, Trophy, Zap, ChevronRight, Star, Shield, BookOpen, Sparkles, CheckCircle } from 'lucide-react';
-import { ACTIVITIES } from './data';
-
+import { useState, useEffect } from 'react';
+import api from './api';
 const features = [
     { icon: <CalendarDays size={22} />, color: '#16a34a', label: 'Activity Management', desc: 'Browse and register for clubs, sports, and events all in one place.' },
     { icon: <Users size={22} />, color: '#2563eb', label: 'Real-Time Tracking', desc: 'Track your registrations and participation status in real time.' },
@@ -20,7 +20,13 @@ const stats = [
 
 export default function Landing() {
     const navigate = useNavigate();
-    const featured = ACTIVITIES.filter(a => a.featured).slice(0, 4);
+    const [activities, setActivities] = useState([]);
+
+    useEffect(() => {
+        api.get('/activities').then(res => setActivities(res.data)).catch(console.error);
+    }, []);
+
+    const featured = activities.filter(a => a.featured).slice(0, 4);
 
     return (
         <div style={{ background: '#f0fdf4', minHeight: '100vh', color: 'var(--text-primary)' }}>
@@ -120,7 +126,7 @@ export default function Landing() {
                     </button>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(240px,1fr))', gap: 18 }}>
-                    {ACTIVITIES.slice(0, 4).map(a => {
+                    {activities.slice(0, 4).map(a => {
                         const fillPct = Math.round((a.currentParticipants / a.maxParticipants) * 100);
                         const catEmoji = a.category === 'Club' ? '🎭' : a.category === 'Sport' ? '🏆' : '⚡';
                         return (

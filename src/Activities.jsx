@@ -1,20 +1,37 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, SlidersHorizontal, Sparkles } from 'lucide-react';
-import { ACTIVITIES } from './data';
+import api from './api';
 import ActivityCard from './ActivityCard';
+import Spinner from './Spinner';
 
 const cats = ['All', 'Club', 'Sport', 'Event'];
 
 export default function Activities() {
+    const [activities, setActivities] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [q, setQ] = useState('');
     const [cat, setCat] = useState('All');
     const [sort, setSort] = useState('featured');
 
-    const filtered = ACTIVITIES
+    useEffect(() => {
+        const fetchActivities = async () => {
+            try {
+                const res = await api.get('/activities');
+                setActivities(res.data);
+            } catch (err) {
+                console.error('Failed to fetch activities', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchActivities();
+    }, []);
+
+    const filtered = activities
         .filter(a => {
             if (cat !== 'All' && a.category !== cat) return false;
             const lq = q.toLowerCase();
-            return !lq || a.title.toLowerCase().includes(lq) || a.description.toLowerCase().includes(lq) || a.tags.some(t => t.toLowerCase().includes(lq));
+            return !lq || a.title.toLowerCase().includes(lq) || a.description.toLowerCase().includes(lq) || (a.tags && a.tags.some(t => t.toLowerCase().includes(lq)));
         })
         .sort((a, b) => {
             if (sort === 'featured') return (b.featured ? 1 : 0) - (a.featured ? 1 : 0);
@@ -22,6 +39,8 @@ export default function Activities() {
             if (sort === 'popular') return b.currentParticipants - a.currentParticipants;
             return 0;
         });
+
+    if (loading) return <div style={{ display: 'grid', placeItems: 'center', height: '60vh' }}><Spinner /></div>;
 
     return (
         <div className="page-in" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
@@ -32,7 +51,7 @@ export default function Activities() {
                         <Sparkles size={22} style={{ color: 'var(--purple-light)' }} /> All Activities
                     </h1>
                     <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-                        Showing <strong style={{ color: 'var(--text-primary)' }}>{filtered.length}</strong> of {ACTIVITIES.length} activities
+                        Showing <strong style={{ color: 'var(--text-primary)' }}>{filtered.length}</strong> of {activities.length} activities
                     </p>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 14px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 12 }}>

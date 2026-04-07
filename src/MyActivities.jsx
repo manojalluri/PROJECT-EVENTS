@@ -1,20 +1,23 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
-import { ACTIVITIES } from './data';
 import { ClipboardList, Calendar, Clock, MapPin, ChevronRight, Filter } from 'lucide-react';
 
-const statuses = ['All', 'Registered', 'Participated', 'Completed'];
+const statuses = ['All', 'REGISTERED', 'PARTICIPATED', 'COMPLETED'];
 
 export default function MyActivities() {
-    const { getMyRegistrations } = useAuth();
+    const { registrations } = useAuth();
     const navigate = useNavigate();
     const [filter, setFilter] = useState('All');
-    const regs = getMyRegistrations();
+    
+    // Ensure we have an array
+    const regs = registrations || [];
     const shown = filter === 'All' ? regs : regs.filter(r => r.status === filter);
 
-    const counts = { All: regs.length, Registered: 0, Participated: 0, Completed: 0 };
+    const counts = { All: regs.length, REGISTERED: 0, PARTICIPATED: 0, COMPLETED: 0 };
     regs.forEach(r => { if (counts[r.status] !== undefined) counts[r.status]++; });
+
+    const formatStatus = (s) => s.charAt(0) + s.slice(1).toLowerCase();
 
     return (
         <div className="page-in" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
@@ -29,9 +32,9 @@ export default function MyActivities() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(140px,1fr))', gap: 14 }}>
                 {[
                     { label: 'Total Joined', val: counts.All, color: '#a78bfa' },
-                    { label: 'Upcoming', val: counts.Registered, color: '#fbbf24' },
-                    { label: 'Participated', val: counts.Participated, color: '#60a5fa' },
-                    { label: 'Completed', val: counts.Completed, color: '#34d399' },
+                    { label: 'Upcoming', val: counts.REGISTERED, color: '#fbbf24' },
+                    { label: 'Participated', val: counts.PARTICIPATED, color: '#60a5fa' },
+                    { label: 'Completed', val: counts.COMPLETED, color: '#34d399' },
                 ].map(s => (
                     <div key={s.label} className="card-static" style={{ padding: '18px 20px', textAlign: 'center' }}>
                         <div style={{ fontSize: 26, fontWeight: 800, fontFamily: 'Plus Jakarta Sans', color: s.color, marginBottom: 4 }}>{s.val}</div>
@@ -45,7 +48,7 @@ export default function MyActivities() {
                 <Filter size={14} style={{ color: 'var(--text-muted)' }} />
                 {statuses.map(s => (
                     <button key={s} onClick={() => setFilter(s)} className={`chip${filter === s ? ' active' : ''}`}>
-                        {s}{s !== 'All' && counts[s] > 0 ? ` (${counts[s]})` : ''}
+                        {s === 'All' ? s : formatStatus(s)}{s !== 'All' && counts[s] > 0 ? ` (${counts[s]})` : ''}
                     </button>
                 ))}
             </div>
@@ -56,14 +59,14 @@ export default function MyActivities() {
                     <div style={{ fontSize: 48, marginBottom: 14 }}>📋</div>
                     <h3 style={{ fontWeight: 700, fontSize: 18, marginBottom: 8 }}>No activities found</h3>
                     <p style={{ color: 'var(--text-muted)', marginBottom: 20 }}>
-                        {regs.length === 0 ? "You haven't joined any activities yet." : `No activities with "${filter}" status.`}
+                        {regs.length === 0 ? "You haven't joined any activities yet." : `No activities with "${formatStatus(filter)}" status.`}
                     </p>
                     <button onClick={() => navigate('/activities')} className="btn btn-primary">Browse Activities</button>
                 </div>
             ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {shown.map(reg => {
-                        const act = ACTIVITIES.find(a => a.id === reg.activityId);
+                        const act = reg.activity;
                         if (!act) return null;
                         return (
                             <div key={reg.id} className="card" style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 16, cursor: 'pointer' }}
@@ -89,7 +92,7 @@ export default function MyActivities() {
                                             <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 5 }}>Registered on {reg.registeredAt}</p>
                                         </div>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-                                            <span className={`status-${reg.status.toLowerCase()}`}>{reg.status}</span>
+                                            <span className={`status-${reg.status.toLowerCase()}`}>{formatStatus(reg.status)}</span>
                                             <ChevronRight size={15} style={{ color: 'var(--text-muted)' }} />
                                         </div>
                                     </div>
