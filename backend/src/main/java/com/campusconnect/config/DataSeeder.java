@@ -1,18 +1,16 @@
 package com.campusconnect.config;
 
-import com.campusconnect.entity.Activity;
 import com.campusconnect.entity.User;
-import com.campusconnect.repository.ActivityRepository;
 import com.campusconnect.repository.UserRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import java.time.LocalDate;
-import java.util.Arrays;
 
 @Configuration
 public class DataSeeder {
+
     private final PasswordEncoder passwordEncoder;
 
     public DataSeeder(PasswordEncoder passwordEncoder) {
@@ -20,19 +18,26 @@ public class DataSeeder {
     }
 
     @Bean
-    CommandLineRunner initDatabase(UserRepository userRepository, ActivityRepository activityRepository) {
+    CommandLineRunner initDatabase(UserRepository userRepository) {
         return args -> {
-            if (userRepository.count() == 0) {
+            // Always ensure one and only one ADMIN exists — never allow registration for admin
+            String adminEmail = "admin@campus.edu";
+
+            boolean adminExists = userRepository.findByEmail(adminEmail).isPresent();
+
+            if (!adminExists) {
                 User admin = new User();
                 admin.setName("Super Admin");
-                admin.setEmail("admin@campus.edu");
+                admin.setEmail(adminEmail);
                 admin.setPassword(passwordEncoder.encode("admin123"));
                 admin.setRole(User.Role.ADMIN);
                 admin.setDepartment("Administration");
                 admin.setAvatar("SA");
                 admin.setJoinedAt(LocalDate.now());
-
                 userRepository.save(admin);
+                System.out.println("✅ Admin account seeded: " + adminEmail);
+            } else {
+                System.out.println("✅ Admin account already exists in DB.");
             }
         };
     }

@@ -31,6 +31,10 @@ public class AuthService {
     }
 
     public AuthResponse register(RegisterRequest request) {
+        // Block admin email from being registered via API
+        if ("admin@campus.edu".equalsIgnoreCase(request.getEmail().trim())) {
+            throw new RuntimeException("This email is reserved. Admin account cannot be registered.");
+        }
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email already exists");
         }
@@ -65,6 +69,16 @@ public class AuthService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
         var jwtToken = jwtService.generateToken(new org.springframework.security.core.userdetails.User(
                 user.getEmail(), user.getPassword(), java.util.Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))));
+
+        // Send premium login notification email (only for non-admin users)
+        if (user.getRole() != User.Role.ADMIN) {
+            try {
+                emailService.sendLoginNotificationEmail(user.getEmail(), user.getName());
+            } catch (Exception e) {
+                System.err.println("Could not send login notification email: " + e.getMessage());
+            }
+        }
+
         return new AuthResponse(jwtToken, mapToDTO(user));
     }
 
