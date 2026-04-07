@@ -13,12 +13,23 @@ dist-ssr
 *.local
 
 # Editor directories and files
+*.sw?
+
+# Maven
+backend/target/
+target/
+
+# IDEs
+.settings/
+.project
+.classpath
+.factorypath
+backend/.settings/
+backend/.project
+backend/.classpath
+backend/.factorypath
 .vscode/*
 !.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+!.vscode/launch.json
+!.vscode/settings.json
+

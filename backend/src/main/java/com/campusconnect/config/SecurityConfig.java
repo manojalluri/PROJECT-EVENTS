@@ -1,7 +1,6 @@
 package com.campusconnect.config;
 
 import com.campusconnect.security.JwtAuthenticationFilter;
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -19,12 +18,16 @@ import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
-@RequiredArgsConstructor
 @EnableMethodSecurity
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final AuthenticationProvider authenticationProvider;
+
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthFilter, AuthenticationProvider authenticationProvider) {
+        this.jwtAuthFilter = jwtAuthFilter;
+        this.authenticationProvider = authenticationProvider;
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {

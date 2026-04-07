@@ -4,7 +4,6 @@ import com.campusconnect.entity.Activity;
 import com.campusconnect.entity.User;
 import com.campusconnect.repository.ActivityRepository;
 import com.campusconnect.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,15 +23,14 @@ public class DataSeeder {
     CommandLineRunner initDatabase(UserRepository userRepository, ActivityRepository activityRepository) {
         return args -> {
             if (userRepository.count() == 0) {
-                User admin = User.builder()
-                        .name("Super Admin")
-                        .email("admin@campus.edu")
-                        .password(passwordEncoder.encode("admin123"))
-                        .role(User.Role.ADMIN)
-                        .department("Administration")
-                        .avatar("SA")
-                        .joinedAt(LocalDate.now())
-                        .build();
+                User admin = new User();
+                admin.setName("Super Admin");
+                admin.setEmail("admin@campus.edu");
+                admin.setPassword(passwordEncoder.encode("admin123"));
+                admin.setRole(User.Role.ADMIN);
+                admin.setDepartment("Administration");
+                admin.setAvatar("SA");
+                admin.setJoinedAt(LocalDate.now());
 
                 userRepository.save(admin);
             }

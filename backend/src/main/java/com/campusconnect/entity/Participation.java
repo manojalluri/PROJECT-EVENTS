@@ -1,20 +1,12 @@
 package com.campusconnect.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 @Table(name = "participation")
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Participation {
     @Id
@@ -38,4 +30,16 @@ public class Participation {
     public enum Status {
         REGISTERED, PARTICIPATED, COMPLETED, CANCELLED
     }
+    public Participation() {}
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public User getUser() { return user; }
+    public void setUser(User user) { this.user = user; }
+    public Activity getActivity() { return activity; }
+    public void setActivity(Activity activity) { this.activity = activity; }
+    public Status getStatus() { return status; }
+    public void setStatus(Status status) { this.status = status; }
+    public LocalDate getRegisteredAt() { return registeredAt; }
+    public void setRegisteredAt(LocalDate registeredAt) { this.registeredAt = registeredAt; }
 }

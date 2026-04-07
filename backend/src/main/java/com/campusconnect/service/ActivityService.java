@@ -4,7 +4,6 @@ import com.campusconnect.entity.Activity;
 import com.campusconnect.entity.User;
 import com.campusconnect.repository.ActivityRepository;
 import com.campusconnect.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.util.List;
 

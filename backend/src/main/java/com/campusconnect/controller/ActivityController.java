@@ -2,7 +2,6 @@ package com.campusconnect.controller;
 
 import com.campusconnect.entity.Activity;
 import com.campusconnect.service.ActivityService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;

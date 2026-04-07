@@ -1,18 +1,10 @@
 package com.campusconnect.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "notifications")
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class Notification {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,10 +17,22 @@ public class Notification {
     @Column(nullable = false)
     private String message;
 
-    @Builder.Default
     private Boolean isRead = false;
 
-    @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
     private String type; // e.g., success, info, warning
+    public Notification() {}
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public User getUser() { return user; }
+    public void setUser(User user) { this.user = user; }
+    public String getMessage() { return message; }
+    public void setMessage(String message) { this.message = message; }
+    public Boolean getIsRead() { return isRead; }
+    public void setIsRead(Boolean isRead) { this.isRead = isRead; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public String getType() { return type; }
+    public void setType(String type) { this.type = type; }
 }

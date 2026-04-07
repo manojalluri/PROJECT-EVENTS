@@ -2,16 +2,18 @@ package com.campusconnect.controller;
 
 import com.campusconnect.entity.User;
 import com.campusconnect.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")
-@RequiredArgsConstructor
 public class UserController {
     private final UserRepository userRepository;
+
+    public UserController(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
     @GetMapping
     public ResponseEntity<List<User>> getAllUsers() {

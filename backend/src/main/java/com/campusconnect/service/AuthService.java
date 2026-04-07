@@ -2,12 +2,12 @@ package com.campusconnect.service;
 
 import com.campusconnect.dto.AuthRequest;
 import com.campusconnect.dto.AuthResponse;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import com.campusconnect.dto.RegisterRequest;
 import com.campusconnect.dto.UserDTO;
 import com.campusconnect.entity.User;
 import com.campusconnect.repository.UserRepository;
 import com.campusconnect.security.JwtService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -34,16 +34,15 @@ public class AuthService {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email already exists");
         }
-        var user = User.builder()
-                .name(request.getName())
-                .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .role(User.Role.STUDENT)
-                .department(request.getDepartment())
-                .year(request.getYear())
-                .joinedAt(LocalDate.now())
-                .avatar(getAvatarFromName(request.getName()))
-                .build();
+        User user = new User();
+        user.setName(request.getName());
+        user.setEmail(request.getEmail());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setRole(User.Role.STUDENT);
+        user.setDepartment(request.getDepartment());
+        user.setYear(request.getYear());
+        user.setJoinedAt(LocalDate.now());
+        user.setAvatar(getAvatarFromName(request.getName()));
         userRepository.save(user);
         
         // Send welcome email
@@ -54,11 +53,8 @@ public class AuthService {
         }
 
         var jwtToken = jwtService.generateToken(new org.springframework.security.core.userdetails.User(
-                user.getEmail(), user.getPassword(), java.util.Collections.emptyList()));
-        return AuthResponse.builder()
-                .token(jwtToken)
-                .user(mapToDTO(user))
-                .build();
+                user.getEmail(), user.getPassword(), java.util.Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))));
+        return new AuthResponse(jwtToken, mapToDTO(user));
     }
 
     public AuthResponse login(AuthRequest request) {
@@ -68,11 +64,8 @@ public class AuthService {
         var user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
         var jwtToken = jwtService.generateToken(new org.springframework.security.core.userdetails.User(
-                user.getEmail(), user.getPassword(), java.util.Collections.emptyList()));
-        return AuthResponse.builder()
-                .token(jwtToken)
-                .user(mapToDTO(user))
-                .build();
+                user.getEmail(), user.getPassword(), java.util.Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))));
+        return new AuthResponse(jwtToken, mapToDTO(user));
     }
 
     private UserDTO mapToDTO(User user) {

@@ -4,7 +4,6 @@ import com.campusconnect.dto.AuthRequest;
 import com.campusconnect.dto.AuthResponse;
 import com.campusconnect.dto.RegisterRequest;
 import com.campusconnect.service.AuthService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;

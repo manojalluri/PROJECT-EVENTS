@@ -4,15 +4,18 @@ import com.campusconnect.entity.Notification;
 import com.campusconnect.entity.User;
 import com.campusconnect.repository.NotificationRepository;
 import com.campusconnect.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
-@RequiredArgsConstructor
 public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
+
+    public NotificationService(NotificationRepository notificationRepository, UserRepository userRepository) {
+        this.notificationRepository = notificationRepository;
+        this.userRepository = userRepository;
+    }
 
     public List<Notification> getNotificationsForUser(Long userId) {
         User user = userRepository.findById(userId).orElseThrow();
@@ -29,6 +32,23 @@ public class NotificationService {
         User user = userRepository.findById(userId).orElseThrow();
         List<Notification> notifications = notificationRepository.findByUserOrderByCreatedAtDesc(user);
         notifications.forEach(n -> n.setIsRead(true));
+        notificationRepository.saveAll(notifications);
+    }
+
+    public void broadcastNotification(String message, String type) {
+        List<User> students = userRepository.findAll().stream()
+                .filter(u -> u.getRole() == User.Role.STUDENT)
+                .toList();
+
+        List<Notification> notifications = students.stream().map(student -> {
+            Notification notification = new Notification();
+            notification.setUser(student);
+            notification.setMessage(message);
+            notification.setType(type);
+            notification.setIsRead(false);
+            return notification;
+        }).toList();
+
         notificationRepository.saveAll(notifications);
     }
 }
